@@ -4,6 +4,11 @@ import pandas as pd
 import requests
 import xml.etree.ElementTree as ET
 import re
+import warnings
+
+# Supprimer les warnings de dépréciation
+warnings.filterwarnings('ignore', category=FutureWarning)
+warnings.filterwarnings('ignore', category=DeprecationWarning)
 
 # Configuration de la page
 st.set_page_config(
@@ -29,7 +34,11 @@ def check_authentication():
             submit_button = st.form_submit_button("Se connecter")
             
             if submit_button:
-                if username == "echaf" and password == "boulea10bateau*":
+                # Utiliser les secrets Streamlit
+                correct_username = st.secrets.authentication.username
+                correct_password = st.secrets.authentication.password
+                
+                if username == correct_username and password == correct_password:
                     st.session_state.authenticated = True
                     st.success("✅ Connexion réussie !")
                     st.rerun()
@@ -44,13 +53,12 @@ check_authentication()
 # Initialisation des états de session
 if 'api' not in st.session_state:
     try:
-        with open('insee api.txt', 'r') as f:
-            lines = f.readlines()
-            consumer_key = lines[7].split(': ')[1].strip()
-            consumer_secret = lines[8].split(': ')[1].strip()
-            st.session_state.api = InseeBdmAPI(consumer_key, consumer_secret)
+        # Utiliser les secrets Streamlit pour l'API INSEE
+        consumer_key = st.secrets.insee_api.consumer_key
+        consumer_secret = st.secrets.insee_api.consumer_secret
+        st.session_state.api = InseeBdmAPI(consumer_key, consumer_secret)
     except Exception as e:
-        st.error(f"Erreur lors de la lecture du fichier de configuration : {str(e)}")
+        st.error(f"Erreur lors de la lecture des secrets : {str(e)}")
         st.stop()
 
 if 'all_dataflows' not in st.session_state:
