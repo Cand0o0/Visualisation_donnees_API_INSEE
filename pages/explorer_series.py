@@ -53,7 +53,7 @@ check_authentication()
 # Initialisation des états de session
 if 'api' not in st.session_state:
     try:
-        # L'API INSEE BDM fonctionne sans authentification pour les données publiques
+        # L'API INSEE BDM est en libre accès
         st.session_state.api = InseeBdmAPI()
     except Exception as e:
         st.error(f"Erreur lors de l'initialisation de l'API : {str(e)}")

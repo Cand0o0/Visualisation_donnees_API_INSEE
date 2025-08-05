@@ -63,8 +63,9 @@ class InseeBdmAPI:
         Returns:
             list: Liste des séries trouvées
         """
-        if not self.token and not self.get_token():
-            return {"error": "Authentification requise"}
+        # L'API BDM est en libre accès, pas besoin d'authentification
+        # if not self.token and not self.get_token():
+        #     return {"error": "Authentification requise"}
 
         # Utilisation de l'API de recherche
         url = f"{self.base_url}/data/SERIES_BDM"
@@ -180,8 +181,9 @@ class InseeBdmAPI:
         """
         Récupère les données des séries par leurs identifiants idBank
         """
-        if not self.token and not self.get_token():
-            return {"error": "Authentification requise"}
+        # L'API BDM est en libre accès, pas besoin d'authentification
+        # if not self.token and not self.get_token():
+        #     return {"error": "Authentification requise"}
 
         # Conversion en liste si nécessaire
         if isinstance(idbanks, str):
