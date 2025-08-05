@@ -12,6 +12,35 @@ st.set_page_config(
     layout="wide"
 )
 
+# Authentification
+def check_authentication():
+    """Vérifie l'authentification de l'utilisateur"""
+    if 'authenticated' not in st.session_state:
+        st.session_state.authenticated = False
+    
+    if not st.session_state.authenticated:
+        st.title("🔐 Authentification")
+        st.markdown("---")
+        
+        # Formulaire de connexion
+        with st.form("login_form"):
+            username = st.text_input("Identifiant")
+            password = st.text_input("Mot de passe", type="password")
+            submit_button = st.form_submit_button("Se connecter")
+            
+            if submit_button:
+                if username == "echaf" and password == "boulea10bateau*":
+                    st.session_state.authenticated = True
+                    st.success("✅ Connexion réussie !")
+                    st.rerun()
+                else:
+                    st.error("❌ Identifiant ou mot de passe incorrect")
+        
+        st.stop()
+
+# Vérifier l'authentification
+check_authentication()
+
 # Initialisation des états de session
 if 'api' not in st.session_state:
     try:
