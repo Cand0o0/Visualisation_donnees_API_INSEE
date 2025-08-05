@@ -90,12 +90,10 @@ st.title("📊 Visualisation des données INSEE")
 # Initialisation de la session state
 if 'api' not in st.session_state:
     try:
-        # Utiliser les secrets Streamlit pour l'API INSEE
-        consumer_key = st.secrets.insee_api.consumer_key
-        consumer_secret = st.secrets.insee_api.consumer_secret
-        st.session_state.api = InseeBdmAPI(consumer_key, consumer_secret)
+        # L'API INSEE BDM fonctionne sans authentification pour les données publiques
+        st.session_state.api = InseeBdmAPI()
     except Exception as e:
-        st.error(f"Erreur lors de la lecture des secrets : {str(e)}")
+        st.error(f"Erreur lors de l'initialisation de l'API : {str(e)}")
         st.stop()
 
 # Initialisation du dictionnaire des séries dans la session state
