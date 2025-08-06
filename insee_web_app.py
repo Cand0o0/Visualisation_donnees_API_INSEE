@@ -61,8 +61,10 @@ st.title("📊 Visualisation des données INSEE")
 # Initialisation de l'API si nécessaire
 if st.session_state.api is None:
     try:
-        # L'API INSEE BDM est en libre accès
-        st.session_state.api = InseeBdmAPI()
+        # Récupération des clés d'API depuis les secrets Streamlit
+        consumer_key = st.secrets.api_insee.consumer_key
+        consumer_secret = st.secrets.api_insee.consumer_secret
+        st.session_state.api = InseeBdmAPI(consumer_key, consumer_secret)
     except Exception as e:
         st.error(f"Erreur lors de l'initialisation de l'API : {str(e)}")
         st.stop()
@@ -83,7 +85,7 @@ st.sidebar.header("Paramètres")
 # Gestion des séries (ajout/suppression)
 with st.sidebar.expander("⚙️ Gérer les séries", expanded=False):
     # Onglets pour séparer l'ajout et la suppression
-    tab_add, tab_search, tab_delete = st.tabs(["Ajouter", "Rechercher", "Supprimer"])
+    tab_add, tab_delete = st.tabs(["Ajouter", "Supprimer"])
     
     # Onglet Ajout manuel
     with tab_add:
@@ -120,34 +122,7 @@ with st.sidebar.expander("⚙️ Gérer les séries", expanded=False):
                     update_series_and_save(new_series_dict)
                     st.success(f"✅ Série '{new_series_name}' ajoutée avec succès !")
     
-    # Onglet Recherche
-    with tab_search:
-        search_query = st.text_input("🔍 Rechercher une série", 
-                                   placeholder="Entrez un mot-clé (ex: population, prix, emploi...)")
-        
-        if search_query:
-            with st.spinner("Recherche en cours..."):
-                search_results = st.session_state.api.search_series(search_query)
-                
-                if isinstance(search_results, list):
-                    st.write(f"📊 {len(search_results)} séries trouvées")
-                    
-                    # Affichage des résultats dans un tableau
-                    for serie in search_results:
-                        with st.expander(f"📈 {serie['title_fr']} ({serie['idbank']})"):
-                            st.write(f"**Unité** : {serie['unit']}")
-                            st.write(f"**Fréquence** : {serie['frequency']}")
-                            
-                            # Bouton pour ajouter la série
-                            if st.button("➕ Ajouter cette série", key=f"add_{serie['idbank']}"):
-                                new_series_dict = st.session_state.series_options.copy()
-                                new_series_dict[serie['title_fr']] = serie['idbank']
-                                update_series_and_save(new_series_dict)
-                                st.success("✅ Série ajoutée avec succès !")
-                                st.rerun()
-                else:
-                    st.error("❌ Erreur lors de la recherche")
-    
+
     # Onglet Suppression
     with tab_delete:
         st.write("Sélectionnez les séries à supprimer :")

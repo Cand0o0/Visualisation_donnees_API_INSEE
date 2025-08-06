@@ -12,6 +12,15 @@ class InseeBdmAPI:
         self.consumer_key = consumer_key
         self.consumer_secret = consumer_secret
         self.token = None
+        
+        # Headers de base pour l'API BDM
+        self.base_headers = {
+            'Accept': 'application/xml',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+        }
+        
+        # Authentification automatique au démarrage
+        self.get_token()
 
     def get_token(self) -> bool:
         """
@@ -45,10 +54,8 @@ class InseeBdmAPI:
         """
         Prépare les headers pour les requêtes API
         """
-        headers = {
-            'Accept': accept_type,
-            'Content-Type': accept_type
-        }
+        headers = self.base_headers.copy()
+        headers['Accept'] = accept_type
         if self.token:
             headers['Authorization'] = f'Bearer {self.token}'
         return headers
@@ -63,9 +70,9 @@ class InseeBdmAPI:
         Returns:
             list: Liste des séries trouvées
         """
-        # L'API BDM est en libre accès, pas besoin d'authentification
-        # if not self.token and not self.get_token():
-        #     return {"error": "Authentification requise"}
+        # Vérification de l'authentification
+        if not self.token and not self.get_token():
+            return {"error": "Authentification requise"}
 
         # Utilisation de l'API de recherche
         url = f"{self.base_url}/data/SERIES_BDM"
@@ -181,9 +188,9 @@ class InseeBdmAPI:
         """
         Récupère les données des séries par leurs identifiants idBank
         """
-        # L'API BDM est en libre accès, pas besoin d'authentification
-        # if not self.token and not self.get_token():
-        #     return {"error": "Authentification requise"}
+        # Vérification de l'authentification
+        if not self.token and not self.get_token():
+            return {"error": "Authentification requise"}
 
         # Conversion en liste si nécessaire
         if isinstance(idbanks, str):

@@ -27,8 +27,10 @@ check_global_authentication()
 # Initialisation de l'API si nécessaire
 if st.session_state.api is None:
     try:
-        # L'API INSEE BDM est en libre accès
-        st.session_state.api = InseeBdmAPI()
+        # Récupération des clés d'API depuis les secrets Streamlit
+        consumer_key = st.secrets.api_insee.consumer_key
+        consumer_secret = st.secrets.api_insee.consumer_secret
+        st.session_state.api = InseeBdmAPI(consumer_key, consumer_secret)
     except Exception as e:
         st.error(f"Erreur lors de l'initialisation de l'API : {str(e)}")
         st.stop()
