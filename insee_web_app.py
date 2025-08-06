@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 import json
 import os
 import warnings
+from config import init_session_state, check_global_authentication, get_default_series, show_logout_button
 
 # Supprimer les warnings de dépréciation
 warnings.filterwarnings('ignore', category=FutureWarning)
@@ -18,38 +19,11 @@ st.set_page_config(
     layout="wide"
 )
 
-# Authentification
-def check_authentication():
-    """Vérifie l'authentification de l'utilisateur"""
-    if 'authenticated' not in st.session_state:
-        st.session_state.authenticated = False
-    
-    if not st.session_state.authenticated:
-        st.title("🔐 Authentification")
-        st.markdown("---")
-        
-        # Formulaire de connexion
-        with st.form("login_form"):
-            username = st.text_input("Identifiant")
-            password = st.text_input("Mot de passe", type="password")
-            submit_button = st.form_submit_button("Se connecter")
-            
-            if submit_button:
-                # Utiliser les secrets Streamlit
-                correct_username = st.secrets.authentication.username
-                correct_password = st.secrets.authentication.password
-                
-                if username == correct_username and password == correct_password:
-                    st.session_state.authenticated = True
-                    st.success("✅ Connexion réussie !")
-                    st.rerun()
-                else:
-                    st.error("❌ Identifiant ou mot de passe incorrect")
-        
-        st.stop()
+# Initialisation de la session state globale
+init_session_state()
 
-# Vérifier l'authentification
-check_authentication()
+# Vérifier l'authentification globale
+check_global_authentication()
 
 # Fonctions de sauvegarde et chargement des séries
 def save_series_to_json(series_dict: dict, filename: str = "saved_series.json"):
@@ -57,9 +31,10 @@ def save_series_to_json(series_dict: dict, filename: str = "saved_series.json"):
     try:
         with open(filename, 'w', encoding='utf-8') as f:
             json.dump(series_dict, f, ensure_ascii=False, indent=2)
+        st.success(f"✅ {len(series_dict)} série(s) sauvegardée(s) dans {filename}")
         return True
     except Exception as e:
-        st.error(f"Erreur lors de la sauvegarde : {str(e)}")
+        st.error(f"❌ Erreur lors de la sauvegarde : {str(e)}")
         return False
 
 def load_series_from_json(filename: str = "saved_series.json") -> dict:
@@ -67,28 +42,24 @@ def load_series_from_json(filename: str = "saved_series.json") -> dict:
     try:
         if os.path.exists(filename):
             with open(filename, 'r', encoding='utf-8') as f:
-                return json.load(f)
+                loaded_series = json.load(f)
+            st.info(f"📂 {len(loaded_series)} série(s) chargée(s) depuis {filename}")
+            return loaded_series
         else:
             # Retourne les séries par défaut si le fichier n'existe pas
-            return {
-                "Population française": "001641607",
-                "Indice des prix à la consommation": "001769682",
-                "Taux de chômage": "001688526"
-            }
+            default_series = get_default_series()
+            st.info(f"📂 Fichier {filename} non trouvé, utilisation des séries par défaut")
+            return default_series
     except Exception as e:
-        st.error(f"Erreur lors du chargement : {str(e)}")
+        st.error(f"❌ Erreur lors du chargement : {str(e)}")
         # Retourne les séries par défaut en cas d'erreur
-        return {
-            "Population française": "001641607",
-            "Indice des prix à la consommation": "001769682",
-            "Taux de chômage": "001688526"
-        }
+        return get_default_series()
 
 # Titre de l'application
 st.title("📊 Visualisation des données INSEE")
 
-# Initialisation de la session state
-if 'api' not in st.session_state:
+# Initialisation de l'API si nécessaire
+if st.session_state.api is None:
     try:
         # L'API INSEE BDM est en libre accès
         st.session_state.api = InseeBdmAPI()
@@ -97,7 +68,7 @@ if 'api' not in st.session_state:
         st.stop()
 
 # Initialisation du dictionnaire des séries dans la session state
-if 'series_options' not in st.session_state:
+if not st.session_state.series_options:
     st.session_state.series_options = load_series_from_json()
 
 # Fonction pour mettre à jour les séries et sauvegarder
@@ -123,8 +94,9 @@ with st.sidebar.expander("⚙️ Gérer les séries", expanded=False):
             # Bouton pour tester l'IdBank
             test_submitted = st.form_submit_button("Tester l'IdBank")
             if test_submitted and new_series_id:
-                # Test de l'IdBank
-                test_result = st.session_state.api.get_series_by_idbank(new_series_id)
+                # Test de l'IdBank avec indicateur de chargement
+                with st.spinner("Test de l'IdBank en cours..."):
+                    test_result = st.session_state.api.get_series_by_idbank(new_series_id)
                 if "error" in test_result:
                     st.error("❌ IdBank invalide ou série non trouvée")
                 else:
@@ -136,8 +108,9 @@ with st.sidebar.expander("⚙️ Gérer les séries", expanded=False):
             # Bouton pour ajouter la série
             submitted = st.form_submit_button("Ajouter la série")
             if submitted and new_series_name and new_series_id:
-                # Vérification de l'IdBank
-                test_result = st.session_state.api.get_series_by_idbank(new_series_id)
+                # Vérification de l'IdBank avec indicateur de chargement
+                with st.spinner("Vérification de l'IdBank..."):
+                    test_result = st.session_state.api.get_series_by_idbank(new_series_id)
                 if "error" in test_result:
                     st.error("❌ IdBank invalide ou série non trouvée")
                 else:
@@ -213,13 +186,31 @@ start_year = st.sidebar.slider(
     value=current_year-5
 )
 
-# Récupération des données
+# Bouton de déconnexion
+show_logout_button()
+
+# Informations de sauvegarde
+st.sidebar.markdown("---")
+st.sidebar.subheader("💾 Sauvegarde")
+st.sidebar.info(f"📊 {len(st.session_state.series_options)} série(s) sauvegardée(s)")
+
+# Bouton pour réinitialiser les séries
+if st.sidebar.button("🔄 Réinitialiser les séries"):
+    default_series = get_default_series()
+    update_series_and_save(default_series)
+    st.sidebar.success("✅ Séries réinitialisées")
+    st.rerun()
+
+# Récupération des données avec indicateur de chargement
 try:
     idbank = st.session_state.series_options[selected_series]
-    result = st.session_state.api.get_series_by_idbank(
-        idbank,
-        start_period=f"{start_year}-01"
-    )
+    
+    # Affichage de l'indicateur de chargement
+    with st.spinner("Récupération des données en cours..."):
+        result = st.session_state.api.get_series_by_idbank(
+            idbank,
+            start_period=f"{start_year}-01"
+        )
 
     if "error" in result:
         st.error(f"Erreur lors de la récupération des données : {result['error']}")

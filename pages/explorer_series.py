@@ -5,6 +5,7 @@ import requests
 import xml.etree.ElementTree as ET
 import re
 import warnings
+from config import init_session_state, check_global_authentication, show_logout_button
 
 # Supprimer les warnings de dépréciation
 warnings.filterwarnings('ignore', category=FutureWarning)
@@ -17,41 +18,14 @@ st.set_page_config(
     layout="wide"
 )
 
-# Authentification
-def check_authentication():
-    """Vérifie l'authentification de l'utilisateur"""
-    if 'authenticated' not in st.session_state:
-        st.session_state.authenticated = False
-    
-    if not st.session_state.authenticated:
-        st.title("🔐 Authentification")
-        st.markdown("---")
-        
-        # Formulaire de connexion
-        with st.form("login_form"):
-            username = st.text_input("Identifiant")
-            password = st.text_input("Mot de passe", type="password")
-            submit_button = st.form_submit_button("Se connecter")
-            
-            if submit_button:
-                # Utiliser les secrets Streamlit
-                correct_username = st.secrets.authentication.username
-                correct_password = st.secrets.authentication.password
-                
-                if username == correct_username and password == correct_password:
-                    st.session_state.authenticated = True
-                    st.success("✅ Connexion réussie !")
-                    st.rerun()
-                else:
-                    st.error("❌ Identifiant ou mot de passe incorrect")
-        
-        st.stop()
+# Initialisation de la session state globale
+init_session_state()
 
-# Vérifier l'authentification
-check_authentication()
+# Vérifier l'authentification globale
+check_global_authentication()
 
-# Initialisation des états de session
-if 'api' not in st.session_state:
+# Initialisation de l'API si nécessaire
+if st.session_state.api is None:
     try:
         # L'API INSEE BDM est en libre accès
         st.session_state.api = InseeBdmAPI()
@@ -59,17 +33,11 @@ if 'api' not in st.session_state:
         st.error(f"Erreur lors de l'initialisation de l'API : {str(e)}")
         st.stop()
 
-if 'all_dataflows' not in st.session_state:
-    st.session_state.all_dataflows = None
-if 'selected_dataflow' not in st.session_state:
-    st.session_state.selected_dataflow = None
-if 'search_results' not in st.session_state:
-    st.session_state.search_results = None
-if 'api_calls' not in st.session_state:
-    st.session_state.api_calls = []
-
 # Titre de la page
 st.title("🔍 Explorateur des séries INSEE")
+
+# Bouton de déconnexion dans la sidebar
+show_logout_button()
 
 # Zone de debug pour les appels API
 with st.expander("🔍 Détails des appels API", expanded=True):
