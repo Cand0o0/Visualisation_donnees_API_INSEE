@@ -38,6 +38,9 @@ Thumbs.db
 # Streamlit
 .streamlit/secrets.toml
 
+# Données utilisateur (optionnel - décommentez pour ignorer les séries sauvegardées)
+# saved_series.json
+
 # Logs
 *.log
 
